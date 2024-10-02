@@ -113,7 +113,7 @@ public class ImageCapture {
                 // max tries for blocks to look through
                 for (int i = 0; i < 10; i++) {
                     RayTraceResult result = this.location.getWorld().rayTraceBlocks(
-                            lookFrom, rayTraceVector, 256,
+                            lookFrom, rayTraceVector, 512,
                             FluidCollisionMode.ALWAYS, false);
 
                     if (result == null) {
