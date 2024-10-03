@@ -2,11 +2,13 @@ package dev.jensderuiter.minecraft_imagery.image;
 
 import dev.jensderuiter.minecraft_imagery.Util;
 import org.bukkit.*;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
+import org.bukkit.block.BlockFace;
 
 import java.awt.*;
 import java.awt.Color;
@@ -302,20 +304,65 @@ public class ImageCapture {
      * @param dye The dye to apply to the color for the block (3-element array).
      */
     private void colorWithDye(int x, int y, RayTraceResult result, double[] dye) {
-        byte lightLevel = result.getHitBlock().getRelative(result.getHitBlockFace()).getLightLevel();
+        // Get the block and block face from the ray trace result
 
-        if(lightLevel > 0) {
-            double shadowLevel = 15.0;
+        if (result.getHitBlock() != null && result.getHitBlockFace() != null) {
+            // Get the block face direction and normalize it
+            double dotProduct = 1;
+            if (result.getHitBlockFace() == BlockFace.EAST || result.getHitBlockFace() == BlockFace.WEST) {
+                dotProduct = 0.8;
+            } else if (result.getHitBlockFace() == BlockFace.NORTH || result.getHitBlockFace() == BlockFace.SOUTH) {
+                dotProduct = 0.9;
+            } else if (result.getHitBlockFace() == BlockFace.UP) {
+                dotProduct = 1;
+            } else if (result.getHitBlockFace() == BlockFace.DOWN) {
+                dotProduct = 0.7;
+            }
 
-            for(int i = 0; i < dye.length; i++) {
-                dye[i] = dye[i] * (lightLevel / shadowLevel);
+            // Get the original light level
+            byte lightLevel = (byte) Math.max(1, Math.min(result.getHitBlock().getRelative(result.getHitBlockFace()).getLightLevel(), 15));
+
+            // Adjust the light level based on your formula
+            double adjustedLightLevel = 0.4 + (lightLevel * 0.01 * 5);
+
+            // Now, adjust the light level based on the dot product
+            adjustedLightLevel *= dotProduct;
+
+            // Ensure the adjusted light level remains in a reasonable range (0.0 to 1.0)
+            adjustedLightLevel = Math.max(0.0, Math.min(adjustedLightLevel, 1.0));
+
+            // Apply the adjusted light level to the dye (assumed to be 0, 0, 0 initially)
+            if (lightLevel > 0) {
+                // Scale the dye values based on the adjusted light level
+                for (int i = 0; i < dye.length; i++) {
+                    dye[i] = dye[i] * adjustedLightLevel; // This will not change dye since it's initially 0,0,0
+                }
+            }
+
+            // Generate the color from the block and dye values
+            Color color = ImageUtil.colorFromType(result.getHitBlock(), dye);
+
+            // If the color is not null, set the pixel in the image
+            if (color != null) {
+                this.image.setRGB(x, y, color.getRGB());
             }
         }
-
-        Color color = ImageUtil.colorFromType(result.getHitBlock(), dye);
-
-        if (color != null) this.image.setRGB(x, y, color.getRGB());
     }
+//    private void colorWithDye(int x, int y, RayTraceResult result, double[] dye) {
+  //      byte lightLevel = result.getHitBlock().getRelative(result.getHitBlockFace()).getLightLevel();
+//
+  //      if(lightLevel > 0) {
+    //        double shadowLevel = 15.0;
+
+      //      for(int i = 0; i < dye.length; i++) {
+        //        dye[i] = dye[i] * (lightLevel / shadowLevel);
+          //  }
+//        }
+//
+  //      Color color = ImageUtil.colorFromType(result.getHitBlock(), dye);
+
+   //     if (color != null) this.image.setRGB(x, y, color.getRGB());
+   // }
 
     private void colorWithWater(int x, int y, RayTraceResult result, double[] dye) {
         byte lightLevel = result.getHitBlock().getRelative(result.getHitBlockFace()).getLightLevel();
