@@ -21,13 +21,14 @@ public class ImageUtil {
      * @return The resulting dye (3-element double array).
      */
     public static double[] applyToDye(double[] currentDye, double[] dyeToApply, float factor) {
+        // Continue with the original logic if no values are 2.0
         double[] newDye = currentDye.clone();
-        // dye color intensity
         float intensity = 0.5f;
         newDye[0] -= (dyeToApply[1] * dyeToApply[2]) * factor * intensity;
         newDye[1] -= (dyeToApply[0] * dyeToApply[2]) * factor * intensity;
         newDye[2] -= (dyeToApply[0] * dyeToApply[1]) * factor * intensity;
 
+        // Ensure no value is less than 0
         if (newDye[0] < 0) newDye[0] = 0;
         if (newDye[1] < 0) newDye[1] = 0;
         if (newDye[2] < 0) newDye[2] = 0;
@@ -42,13 +43,23 @@ public class ImageUtil {
      * @return The resulting color.
      */
     public static Color applyDye(Color color, double[] dye) {
+        // Check if none of the RGB values are 255
+        if (color.getRed() == 255 || color.getGreen() == 255 || color.getBlue() == 255) {
+            // If any of the RGB values is 255, return the original color without applying the dye
+            return color;
+        }
+
+        // Apply the dye by multiplying the RGB values
         int redColor = (int) (color.getRed() * dye[0]);
         int greenColor = (int) (color.getGreen() * dye[1]);
         int blueColor = (int) (color.getBlue() * dye[2]);
 
+        // Clamp the values to be within the RGB range (0-255)
         if (redColor > 255) redColor = 255;
         if (greenColor > 255) greenColor = 255;
         if (blueColor > 255) blueColor = 255;
+
+        // Return the new color after applying the dye
         return new Color(redColor, greenColor, blueColor);
     }
 

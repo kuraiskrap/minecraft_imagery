@@ -1,6 +1,11 @@
 <component name="ArtifactManager">
-  <artifact type="jar" build-on-make="true" name="ImageryAPIFHI">
+  <artifact type="jar" name="ImageryAPIFHI">
     <output-path>$PROJECT_DIR$/out/artifacts/ImageryAPIFHI</output-path>
-    <root id="archive" name="ImageryAPIFHI.jar" />
+    <root id="archive" name="ImageryAPIFHI.jar">
+      <element id="module-output" name="minecraft-imagery" />
+      <element id="library" level="project" name="Maven: org.reflections:reflections:0.9.12" />
+      <element id="library" level="project" name="Maven: org.javassist:javassist:3.26.0-GA" />
+      <element id="library" level="project" name="Maven: com.github.davidmoten:aws-lightweight-client-java:0.1.15" />
+    </root>
   </artifact>
 </component>

@@ -109,18 +109,26 @@ public class ImageCapture {
 
                 Location lookFrom = this.location.clone();
                 double[] dye = new double[]{1, 1, 1};
-
+                boolean lasthitwater = false;
                 // max tries for blocks to look through
                 for (int i = 0; i < 10; i++) {
-                    RayTraceResult result = this.location.getWorld().rayTraceBlocks(
-                            lookFrom, rayTraceVector, 512,
-                            FluidCollisionMode.ALWAYS, false);
+                    RayTraceResult result;
+
+                    if (lasthitwater) {
+                        result = this.location.getWorld().rayTraceBlocks(
+                                lookFrom, rayTraceVector, 512,
+                                FluidCollisionMode.NEVER, false);
+                    } else {
+                        result = this.location.getWorld().rayTraceBlocks(
+                                lookFrom, rayTraceVector, 512,
+                                FluidCollisionMode.ALWAYS, false);
+                    }
 
                     if (result == null) {
                         // no block was hit, so we will assume we are looking at the sky
                         break;
                     }
-
+               //     lasthitwater = result.getHitBlock().getType() == Material.WATER;
                     if (this.options.getExcludedBlocks().contains(result.getHitBlock().getType())) {
                         // we hit an excluded block. update position and keep looking
                         lookFrom = result.getHitPosition().toLocation(this.location.getWorld());
@@ -132,8 +140,17 @@ public class ImageCapture {
                             .get(result.getHitBlock().getType());
 
                     if (translucentBlock != null) {
-                        // we hit a see-through block. update dye, update position and keep looking
-                        dye = ImageUtil.applyToDye(dye, translucentBlock.dye, translucentBlock.factor);
+                        // Check if it's the 10th iteration and the block is water
+                        if (i == 9 && result.getHitBlock().getType() == Material.WATER) {
+                            Color color = ImageUtil.colorFromType(result.getHitBlock(), dye);
+                            if (color != null) this.image.setRGB(x, y, color.getRGB());
+                        }
+                        else if (result.getHitBlock().getType() == Material.WATER) { lasthitwater = true; }
+                        else {
+                            // We hit a see-through block. Update dye, update position and keep looking
+                            dye = ImageUtil.applyToDye(dye, translucentBlock.dye, translucentBlock.factor);
+                        }
+
                         lookFrom = result
                                 .getHitPosition()
                                 .add(rayTraceVector.normalize())
@@ -148,8 +165,15 @@ public class ImageCapture {
                     }
 
                     // color the pixel
-                    this.colorWithDye(x, y, result, dye);
-                    break;
+                    if (lasthitwater) {
+                        this.colorWithWater(x, y, result, dye);
+                        break;
+                    } else {
+                        this.colorWithDye(x, y, result, dye);
+                        break;
+                    }
+                    //this.colorWithDye(x, y, result, dye);
+                    //break;
                 }
 
                 if (entityResult == null) continue;
@@ -293,6 +317,34 @@ public class ImageCapture {
         if (color != null) this.image.setRGB(x, y, color.getRGB());
     }
 
+    private void colorWithWater(int x, int y, RayTraceResult result, double[] dye) {
+        byte lightLevel = result.getHitBlock().getRelative(result.getHitBlockFace()).getLightLevel();
+
+        if(lightLevel > 0) {
+            double shadowLevel = 15.0;
+
+            for(int i = 0; i < dye.length; i++) {
+                dye[i] = dye[i] * (lightLevel / shadowLevel);
+            }
+        }
+
+        Color color = ImageUtil.colorFromType(result.getHitBlock(), dye);
+        int red = color.getRed();
+        int green = color.getGreen();
+        int blue = color.getBlue();
+
+        // Apply the transformations
+        int newRed = (int) (red * 0.5);         // Multiply red by 0.5
+        int newGreen = (int) (green * 0.7);     // Multiply green by 0.7
+        int newBlue = Math.min(blue + 100, 255); // Add 100 to blue and clamp to 255
+
+        // Create a new Color object with the modified values
+        color = new Color(newRed, newGreen, newBlue);
+
+        // Set the pixel to the calculated color
+        if (color != null)   this.image.setRGB(x, y, color.getRGB());
+    }
+
     /**
      * Darken a dye using a given distance.
      * The farther away, the darker the dye.
@@ -302,7 +354,7 @@ public class ImageCapture {
      */
     public double[] darkenDyeByDistance(double[] dye, double distance) {
         for(int i = 0; i < dye.length; i++) {
-            dye[i] = dye[i] * (1 - (distance / 600));
+            dye[i] = dye[i] * (1 - (distance / 1200));
         }
         return dye;
     }

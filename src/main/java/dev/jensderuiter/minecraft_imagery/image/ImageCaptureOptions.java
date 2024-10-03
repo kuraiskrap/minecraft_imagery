@@ -47,6 +47,6 @@ public class ImageCaptureOptions {
     private boolean dayLightCycleAware = true;
 
     @Builder.Default
-    private boolean showDepth = false;
+    private boolean showDepth = true;
 
 }
